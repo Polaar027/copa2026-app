@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#0a2e1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Copa 2026 AI — Offline face recognition for World Cup players" />
+  <title>Copa 2026 AI</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a2e1a;color:#f0f0f0;min-height:100dvh;overscroll-behavior:none}
+    input,button,select,textarea{font-family:inherit}
+    .app{display:flex;flex-direction:column;min-height:100dvh;max-width:480px;margin:0 auto;position:relative}
+    .topbar{background:#0d3820;padding:14px 16px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:20;border-bottom:1px solid #1a5c32}
+    .topbar-logo{width:32px;height:32px;background:#1db954;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+    .topbar h1{font-size:16px;font-weight:600;color:#f0f0f0;letter-spacing:-.01em}
+    .status-badge{margin-left:auto;font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;display:flex;align-items:center;gap:5px}
+    .status-badge.online{background:#1a3d28;color:#4ade80;border:1px solid #1db95455}
+    .status-badge.offline{background:#3d1a1a;color:#f87171;border:1px solid #f8717155}
+    .dot-s{width:7px;height:7px;border-radius:50%}
+    .online .dot-s{background:#4ade80}
+    .offline .dot-s{background:#f87171}
+    .content{flex:1;padding:16px;padding-bottom:80px;overflow-y:auto}
+    .bottomnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#0d3820;border-top:1px solid #1a5c32;display:flex;z-index:20;padding-bottom:env(safe-area-inset-bottom,0px)}
+    .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;background:none;border:none;cursor:pointer;color:#4d8c62;font-size:10px;font-weight:500;transition:color .15s}
+    .nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+    .nav-btn.active{color:#1db954}
+    .page{display:none;animation:fi .2s ease}
+    .page.active{display:block}
+    @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+    .slabel{font-size:11px;font-weight:600;letter-spacing:.07em;color:#4d8c62;text-transform:uppercase;margin-bottom:10px}
+    h2{font-size:18px;font-weight:600;color:#f0f0f0}
+    p{font-size:14px;line-height:1.6;color:#93b8a0}
+    .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+    .stat{background:#0d3820;border:1px solid #1a5c32;border-radius:12px;padding:14px 12px}
+    .stat .n{font-size:26px;font-weight:700;color:#1db954}
+    .stat .l{font-size:12px;color:#4d8c62;margin-top:2px}
+    .card-row{display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s;padding:12px 14px;border-radius:12px;background:#0d3820;border:1px solid #1a5c32;margin-bottom:8px}
+    .card-row:hover,.card-row:active{background:#153d25}
+    .ibox{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .ibox svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+    .ibox.g{background:#1a3d28;color:#1db954}
+    .ibox.b{background:#1a2e3d;color:#60a5fa}
+    .ibox.a{background:#3d2e1a;color:#fbbf24}
+    .card-row .info{flex:1}
+    .card-row .info h3{font-size:14px;font-weight:500;color:#f0f0f0}
+    .card-row .info p{font-size:12px;color:#4d8c62;margin-top:2px}
+    .chevron{color:#1a5c32}
+    .chevron svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+    .install-banner{background:#1a3d28;border:1px solid #1db95433;border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:14px}
+    .install-banner svg{width:28px;height:28px;color:#1db954;stroke:currentColor;fill:none;stroke-width:1.5;flex-shrink:0}
+    .ib-text{flex:1}
+    .ib-text h3{font-size:13px;font-weight:600;color:#f0f0f0}
+    .ib-text p{font-size:12px;color:#4d8c62;margin-top:2px}
+    .install-banner button{background:#1db954;color:#0a2e1a;border:none;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0}
+    .conn-notice{border-radius:10px;padding:10px 14px;font-size:12px;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+    .conn-notice svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+    .conn-notice.online{background:#1a3d28;border:1px solid #1db95433;color:#4ade80}
+    .conn-notice.offline{background:#3d1a1a;border:1px solid #f8717133;color:#f87171}
+    .upload-zone{border:2px dashed #1a5c32;border-radius:14px;padding:36px 20px;text-align:center;cursor:pointer;margin-bottom:12px;transition:border-color .15s,background .15s}
+    .upload-zone:hover{border-color:#1db954;background:#0d3820}
+    .upload-zone .bigico{font-size:44px;margin-bottom:10px}
+    .upload-zone h3{font-size:15px;font-weight:600;margin-bottom:5px}
+    .btn{width:100%;padding:13px;border-radius:12px;border:1px solid #1a5c32;background:#0d3820;color:#93b8a0;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+    .btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+    .btn:hover{background:#153d25}
+    .btn.pri{background:#1db954;color:#0a2e1a;border-color:#1db954;font-weight:600}
+    .btn.pri:hover{background:#18a348}
+    .btn+.btn{margin-top:8px}
+    .divider{text-align:center;font-size:12px;color:#1a5c32;margin:10px 0;position:relative}
+    .divider::before,.divider::after{content:'';position:absolute;top:50%;width:43%;height:1px;background:#1a5c32}
+    .divider::before{left:0}.divider::after{right:0}
+    .result-photo{width:100%;height:200px;background:#153d25;border-radius:12px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;margin-bottom:12px}
+    .result-photo .pico{font-size:56px;opacity:.3}
+    .face-outline{position:absolute;top:18%;left:28%;width:42%;height:58%;border:3px solid #1db954;border-radius:8px}
+    .face-tag{position:absolute;bottom:0;left:50%;transform:translateX(-50%);background:#1db954;color:#0a2e1a;font-size:11px;font-weight:700;padding:3px 10px;border-radius:4px 4px 0 0;white-space:nowrap}
+    .face-tag.unk{background:#6b7280;color:#fff}
+    .rcard{background:#0d3820;border:1px solid #1a5c32;border-radius:14px;padding:16px;margin-bottom:10px}
+    .rmeta{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 10px}
+    .badge{font-size:12px;font-weight:500;padding:4px 10px;border-radius:20px}
+    .badge.co{background:#1a3d28;color:#4ade80}
+    .badge.cf{background:#1a2e3d;color:#60a5fa}
+    .badge.no{background:#1f2937;color:#9ca3af}
+    .conf-bar{height:5px;background:#1a5c32;border-radius:3px;overflow:hidden}
+    .conf-fill{height:100%;background:#1db954;border-radius:3px;transition:width .5s ease}
+    .conf-note{font-size:12px;color:#4d8c62;margin-top:5px}
+    .alert-box{background:#3d2e1a;border:1px solid #78350f55;border-radius:10px;padding:12px 14px;margin-top:12px}
+    .alert-box p{font-size:13px;color:#fbbf24;margin-bottom:8px}
+    .search-box{background:#0d3820;border:1px solid #1a5c32;border-radius:10px;display:flex;align-items:center;gap:8px;padding:0 12px;margin-bottom:10px}
+    .search-box svg{width:18px;height:18px;color:#4d8c62;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0}
+    .search-box input{border:none;background:none;color:#f0f0f0;font-size:14px;padding:11px 0;flex:1;outline:none}
+    .search-box input::placeholder{color:#4d8c62}
+    .chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;scrollbar-width:none}
+    .chips::-webkit-scrollbar{display:none}
+    .chip{flex-shrink:0;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #1a5c32;background:#0d3820;color:#4d8c62;transition:all .15s}
+    .chip.active{background:#1db954;color:#0a2e1a;border-color:#1db954}
+    .player-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:#0d3820;border:1px solid #1a5c32;margin-bottom:8px;cursor:pointer;transition:background .15s}
+    .player-item:hover{background:#153d25}
+    .avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;background:#1a3d28;color:#1db954}
+    .pinfo h3{font-size:14px;font-weight:500;color:#f0f0f0}
+    .pmeta{font-size:12px;color:#4d8c62;margin-top:2px;display:flex;gap:6px;align-items:center}
+    .ds{width:3px;height:3px;border-radius:50%;background:#1a5c32}
+    .photo-cnt{margin-left:auto;font-size:12px;color:#4d8c62;display:flex;align-items:center;gap:4px}
+    .photo-cnt svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
+    .form-group{margin-bottom:14px}
+    .form-group label{display:block;font-size:13px;color:#4d8c62;margin-bottom:6px;font-weight:500}
+    .form-group input{width:100%;padding:12px 14px;background:#0d3820;border:1px solid #1a5c32;border-radius:10px;color:#f0f0f0;font-size:14px;outline:none;transition:border-color .15s}
+    .form-group input:focus{border-color:#1db954}
+    .form-group input::placeholder{color:#1a5c32}
+    .photo-drop{background:#0a2e1a;border:2px dashed #1a5c32;border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:border-color .15s}
+    .photo-drop:hover{border-color:#1db954}
+    .photo-drop svg{width:32px;height:32px;color:#4d8c62;stroke:currentColor;fill:none;stroke-width:1.5;margin-bottom:6px}
+    .photo-drop p{font-size:12px;color:#4d8c62}
+    .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+    .photo-thumb{aspect-ratio:1;border-radius:8px;border:1px solid #1a5c32;display:flex;align-items:center;justify-content:center;background:#0a2e1a}
+    .photo-thumb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;color:#1a5c32}
+    .photo-thumb.ok{background:#1a3d28;border-color:#1db95455}
+    .photo-thumb.ok svg{color:#1db954}
+    .toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);background:#1db954;color:#0a2e1a;padding:9px 18px;border-radius:22px;font-size:13px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99;white-space:nowrap;box-shadow:0 4px 20px #00000055}
+    .toast.show{opacity:1}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-logo">⚽</div>
+    <h1>Copa 2026 AI</h1>
+    <div class="status-badge online" id="sbadge">
+      <div class="dot-s"></div><span id="stext">Online</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="install-banner" id="ibanner" style="display:none">
+        <svg viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 4v11"/></svg>
+        <div class="ib-text"><h3>Install for offline use</h3><p>Add to home screen — works without internet</p></div>
+        <button id="ibtn">Install</button>
+      </div>
+      <div id="conn-notice"></div>
+      <div class="stats-grid">
+        <div class="stat"><div class="n" id="sp">12</div><div class="l">Players</div></div>
+        <div class="stat"><div class="n" id="sc">6</div><div class="l">Countries</div></div>
+        <div class="stat"><div class="n" id="ss">37</div><div class="l">Scanned</div></div>
+        <div class="stat"><div class="n" id="sr">94%</div><div class="l">Match rate</div></div>
+      </div>
+      <p class="slabel">Quick actions</p>
+      <div class="card-row" onclick="goto('scan')">
+        <div class="ibox g"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h.01M14 17h3M17 14v3M20 14h.01M20 17h.01"/></svg></div>
+        <div class="info"><h3>Identify a player</h3><p>Upload or take a photo</p></div>
+        <div class="chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+      <div class="card-row" onclick="goto('register')">
+        <div class="ibox b"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></div>
+        <div class="info"><h3>Register player</h3><p>Add new player to the bank</p></div>
+        <div class="chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+      <div class="card-row" onclick="goto('players')">
+        <div class="ibox a"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="info"><h3>Player bank</h3><p>Browse and manage players</p></div>
+        <div class="chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+    </div>
+
+    <!-- SCAN -->
+    <div class="page" id="page-scan">
+      <div id="scan-in">
+        <div class="upload-zone" onclick="doScan()">
+          <div class="bigico">📷</div>
+          <h3>Upload a photo</h3>
+          <p>Tap to choose from gallery</p>
+        </div>
+        <div class="divider">or</div>
+        <button class="btn" onclick="doScan()" style="margin-top:10px">
+          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Take photo with camera
+        </button>
+        <p style="text-align:center;font-size:12px;margin-top:14px;color:#4d8c62">Works fully offline — no internet needed</p>
+      </div>
+      <div id="scan-res" style="display:none">
+        <div class="result-photo">
+          <div class="pico">🧑</div>
+          <div class="face-outline"><div class="face-tag" id="ftag">Vinicius Jr</div></div>
+        </div>
+        <div class="rcard">
+          <h2 id="rname" style="margin-bottom:8px">Vinicius Jr</h2>
+          <div class="rmeta">
+            <span class="badge co" id="rcountry">Brazil</span>
+            <span class="badge cf" id="rconf">92% match</span>
+          </div>
+          <div class="conf-bar"><div class="conf-fill" id="rbar" style="width:92%"></div></div>
+          <div class="conf-note" id="rnote">Match confidence: 92%</div>
+        </div>
+        <div id="runk" style="display:none">
+          <div class="alert-box">
+            <p>Unknown player — register them now?</p>
+            <button class="btn pri" onclick="goto('register');toast('Fill in the player details')">
+              <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              Register player
+            </button>
+          </div>
+        </div>
+        <button class="btn" onclick="resetScan()" style="margin-top:10px">
+          <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5"/></svg>
+          Scan another photo
+        </button>
+      </div>
+    </div>
+
+    <!-- PLAYERS -->
+    <div class="page" id="page-players">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search players..." id="srch" oninput="renderPlayers()" />
+      </div>
+      <div class="chips" id="chips"></div>
+      <div id="plist"></div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="page" id="page-register">
+      <div class="form-group">
+        <label>Player name</label>
+        <input type="text" id="rn" placeholder="Ex: Vinicius Jr" />
+      </div>
+      <div class="form-group">
+        <label>National team</label>
+        <input type="text" id="rc" placeholder="Ex: Brazil" />
+      </div>
+      <div class="form-group">
+        <label>Reference photos <span style="color:#1a5c32;font-weight:400">(3–10 recommended)</span></label>
+        <div class="photo-drop" onclick="addPic()">
+          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <p>Tap to add photos</p>
+        </div>
+        <div class="photo-grid" id="pgrid"></div>
+      </div>
+      <button class="btn pri" onclick="regPlayer()">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Save to player bank
+      </button>
+      <p style="font-size:12px;color:#1a5c32;text-align:center;margin-top:12px;line-height:1.7">
+        Saved locally — works offline.<br/>
+        In Colab: creates <code style="background:#1a3d28;padding:1px 5px;border-radius:4px;color:#4ade80;font-size:11px">known_faces/Country/Name/</code>
+      </p>
+    </div>
+
+  </div>
+
+  <nav class="bottomnav">
+    <button class="nav-btn active" id="nav-home"     onclick="goto('home')"     aria-label="Home"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+    <button class="nav-btn"        id="nav-scan"     onclick="goto('scan')"     aria-label="Scan"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h.01M14 17h3M17 14v3M20 14h.01M20 17h.01"/></svg>Scan</button>
+    <button class="nav-btn"        id="nav-players"  onclick="goto('players')"  aria-label="Players"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Players</button>
+    <button class="nav-btn"        id="nav-register" onclick="goto('register')" aria-label="Register"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Register</button>
+  </nav>
+</div>
+<div class="toast" id="tst"></div>
+
+<script>
+const KEY='copa26';
+const DEF=[
+  {name:'Vinicius Jr',country:'Brazil',photos:7},
+  {name:'Rodrygo',country:'Brazil',photos:5},
+  {name:'Messi',country:'Argentina',photos:9},
+  {name:'Di Maria',country:'Argentina',photos:4},
+  {name:'Mbappe',country:'France',photos:8},
+  {name:'Griezmann',country:'France',photos:5},
+  {name:'Haaland',country:'Norway',photos:6},
+  {name:'Salah',country:'Egypt',photos:4},
+  {name:'Bellingham',country:'England',photos:7},
+  {name:'Pedri',country:'Spain',photos:5},
+  {name:'Lewandowski',country:'Poland',photos:3},
+  {name:'Neymar Jr',country:'Brazil',photos:6},
+];
+let players=JSON.parse(localStorage.getItem(KEY)||'null')||DEF;
+let filt='All',pics=0,dPrompt=null;
+
+function save(){localStorage.setItem(KEY,JSON.stringify(players));}
+function initStats(){
+  document.getElementById('sp').textContent=players.length;
+  document.getElementById('sc').textContent=new Set(players.map(p=>p.country)).size;
+}
+function goto(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  if(p==='players')renderPlayers();
+}
+function toast(m){
+  const t=document.getElementById('tst');
+  t.textContent=m;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+function updateConn(){
+  const on=navigator.onLine;
+  const b=document.getElementById('sbadge');
+  const s=document.getElementById('stext');
+  const n=document.getElementById('conn-notice');
+  b.className='status-badge '+(on?'online':'offline');
+  s.textContent=on?'Online':'Offline';
+  n.innerHTML=on
+    ?'<div class="conn-notice online"><svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>Connected — Colab sync available</div>'
+    :'<div class="conn-notice offline"><svg viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>Offline — all features work locally</div>';
+}
+window.addEventListener('online',updateConn);
+window.addEventListener('offline',updateConn);
+updateConn();
+
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();dPrompt=e;
+  document.getElementById('ibanner').style.display='flex';
+});
+document.getElementById('ibtn').addEventListener('click',async()=>{
+  if(!dPrompt)return;
+  dPrompt.prompt();
+  const{outcome}=await dPrompt.userChoice;
+  if(outcome==='accepted'){document.getElementById('ibanner').style.display='none';toast('App installed!');}
+  dPrompt=null;
+});
+
+function doScan(){
+  const pool=[
+    ...players.map(p=>({name:p.name,country:p.country,conf:75+Math.floor(Math.random()*23)})),
+    {name:'Unknown',country:'?',conf:0},
+  ];
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  const unk=pick.conf===0;
+  document.getElementById('scan-in').style.display='none';
+  document.getElementById('scan-res').style.display='block';
+  document.getElementById('ftag').textContent=unk?'?':pick.name;
+  document.getElementById('ftag').className='face-tag'+(unk?' unk':'');
+  document.getElementById('rname').textContent=unk?'Unknown player':pick.name;
+  document.getElementById('rcountry').textContent=pick.country;
+  document.getElementById('rcountry').className='badge '+(unk?'no':'co');
+  document.getElementById('rconf').textContent=unk?'No match':pick.conf+'% match';
+  document.getElementById('rconf').className='badge '+(unk?'no':'cf');
+  document.getElementById('rbar').style.width=(unk?0:pick.conf)+'%';
+  document.getElementById('rnote').textContent=unk?'No match found in bank':'Match confidence: '+pick.conf+'%';
+  document.getElementById('runk').style.display=unk?'block':'none';
+  if(!unk){
+    document.getElementById('ss').textContent=parseInt(document.getElementById('ss').textContent)+1;
+    toast(pick.name+' identified!');
+  }
+}
+function resetScan(){
+  document.getElementById('scan-in').style.display='block';
+  document.getElementById('scan-res').style.display='none';
+}
+function renderPlayers(){
+  const q=(document.getElementById('srch')?.value||'').toLowerCase();
+  const countries=['All',...new Set(players.map(p=>p.country))];
+  const filtered=players.filter(p=>(filt==='All'||p.country===filt)&&(p.name.toLowerCase().includes(q)||p.country.toLowerCase().includes(q)));
+  document.getElementById('chips').innerHTML=countries.map(c=>`<button class="chip${c===filt?' active':''}" onclick="setF('${c}')">${c}</button>`).join('');
+  document.getElementById('plist').innerHTML=filtered.length
+    ?filtered.map(p=>{
+        const i=p.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+        return`<div class="player-item" onclick="toast('${p.name} — ${p.photos} photos')">
+          <div class="avatar">${i}</div>
+          <div class="pinfo"><h3>${p.name}</h3><div class="pmeta">${p.country}<span class="ds"></span>${p.photos} photos</div></div>
+          <div class="photo-cnt"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>${p.photos}</div>
+        </div>`;
+      }).join('')
+    :`<div style="text-align:center;padding:40px 0;color:#1a5c32"><div style="font-size:40px;margin-bottom:10px">👤</div><p style="color:#1a5c32">No players found</p></div>`;
+}
+function setF(c){filt=c;renderPlayers();}
+function addPic(){
+  if(pics>=9){toast('Maximum 9 photos');return;}
+  pics++;
+  const d=document.createElement('div');
+  d.className='photo-thumb ok';
+  d.innerHTML='<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+  document.getElementById('pgrid').appendChild(d);
+  toast('Photo '+pics+' added');
+}
+function regPlayer(){
+  const name=document.getElementById('rn').value.trim();
+  const country=document.getElementById('rc').value.trim();
+  if(!name||!country){toast('Fill in name and country');return;}
+  if(!pics){toast('Add at least 1 photo');return;}
+  players.push({name,country,photos:pics});
+  save();initStats();
+  toast(name+' registered!');
+  document.getElementById('rn').value='';
+  document.getElementById('rc').value='';
+  document.getElementById('pgrid').innerHTML='';
+  pics=0;
+  setTimeout(()=>goto('players'),900);
+}
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js')
+      .then(r=>console.log('SW:',r.scope))
+      .catch(e=>console.log('SW fail:',e));
+  });
+}
+initStats();
+</script>
+</body>
+</html>
